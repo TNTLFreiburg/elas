@@ -1,7 +1,7 @@
 elas
 ===========
 
-Toolbox for localization and assignment of intracranial electrodes. This is done by using SPM12 (see below). Post-implantation and pre-implantation (only for depth electrodes) images are needed for processing. Details for use of software see manual and:
+MATLAB toolbox for localization and assignment of intracranial electrodes. This is done by using SPM12 (see below). Post-implantation and pre-implantation (only for depth electrodes) images are needed for processing. Details for use of software see manual and:
 
 Kern, Behncke et al. 
 
