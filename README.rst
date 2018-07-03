@@ -17,11 +17,11 @@ installation
 
 .. code-block:: bash
 
-  git clone https://github.com/joosstephan/elas
+  git clone https://github.com/joosbehncke/elas
 
 3. Edit:	...\elas\startup_elas.m	
   
-  set local SPM path at section “EDIT SPM PATH HERE!!!” 
+    set local SPM path at section “EDIT SPM PATH HERE!!!” 
 
 
 documentation
