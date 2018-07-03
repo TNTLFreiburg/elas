@@ -19,7 +19,7 @@ installation
 
   git clone https://github.com/joosbehncke/elas
 
-3. Edit:	...\elas\startup_elas.m	
+3. Edit:	.../elas/startup_elas.m	
   
     set local SPM path at section “EDIT SPM PATH HERE!!!” 
 
