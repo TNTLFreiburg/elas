@@ -27,4 +27,4 @@ installation
 documentation
 =============
 
-Documentation is online under https://github.com/joosbehncke/elas/tree/master/manuals
+Manual is online under https://github.com/joosbehncke/elas/tree/master/manuals
