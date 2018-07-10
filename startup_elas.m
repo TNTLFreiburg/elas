@@ -6,7 +6,7 @@ function startup_elas(varargin)
 % DESCRIPTION
 %         This function loads needed local settings for working with ELAS 
 %         and sets global paths.
-%         Until ELAS is not embedded in spm: define SPMpath
+%         Define SPMpath in line 37!
 %
 %
 % JBehncke, July'15
@@ -29,46 +29,49 @@ function startup_elas(varargin)
 global ELAS
 
 %=======================================================================
-% - EDIT SPM PATH HERE!!!
-%======================================================================= 
-
-%-directory to main SPM folder (...\spm8)
-%------------------------------------------------------------------------
-ELAS.SPMpath = 'E:\Data Joos\01_Matlab\Repository\Functions\spm12';
-
-%-checks whether path is set
-%------------------------------------------------------------------------
-if ~isdir(ELAS.SPMpath)
-    ELAS.SPMpath = uigetdir(pwd,...
-                      'Please select spm directory...');
-end
-
-
-%=======================================================================
 % - DEFINE PATHS
-%======================================================================= 
-
+%=======================================================================
 %-directory to main ELAS toolbox folder (...\elas)
-%------------------------------------------------------------------------
+%-----------------------------------------------------------------------
 ELAS.ELASpath = fileparts(which(mfilename));
 
+%-directory to main SPM folder (...\spm12)
+%-----------------------------------------------------------------------
+spmfile = [ELAS.ELASpath filesep 'toolbox' filesep 'spmpath.mat'];
+if ~isfield(ELAS,'SPMpath') && exist(spmfile, 'file')~=2
+    spmpth = uigetdir(pwd, 'Please select spm directory...');
+    if spmpth == 0
+        msg = sprintf('Please define SPM path before starting toolbox!\n');
+        msgbox(msg,'WARNING','warn');
+        return
+    end
+    save(spmfile, 'spmpth')
+    ELAS.SPMpath = spmpth;
+elseif ~isfield(ELAS,'SPMpath') && exist(spmfile, 'file')==2
+    load(spmfile)
+    if ~exist(spmpth, 'dir')
+        spmpth = uigetdir(pwd, 'Please select spm directory...');
+        if spmpth == 0
+            msg = sprintf(['Please define SPM path before starting ...' 
+                           'toolbox!\n']);
+            msgbox(msg,'WARNING','warn');
+            return
+        end
+        save(spmfile, 'spmpth')
+    end
+    ELAS.SPMpath = spmpth;
+end 
+
 %-directory to main MTV folder (...\MTV)
-%------------------------------------------------------------------------
+%-----------------------------------------------------------------------
 if exist([ELAS.ELASpath filesep 'mtv'], 'dir')
     ELAS.MTVpath = [ELAS.ELASpath filesep 'mtv'];
 else
     ELAS.MTVpath = '';
 end
 
-%-directory to main SPM folder (...\spm8)
-%------------------------------------------------------------------------
-% sep = regexp(ELAS.ELASpath,filesep);
-% ELAS.SPMpath = ELAS.ELASpath(1:sep(end-1)-1);
-% this directory will depend in final version (embedded in spm) of the spm
-% working directory and therefor can not be defined now!!!
-
 %-directory to local, personal output folder
-%------------------------------------------------------------------------
+%-----------------------------------------------------------------------
 if ~isfield(ELAS,'OUTPUTpath')
 	ELAS.OUTPUTpath = uigetdir(pwd,...
                       'Please select directory for data output...');
@@ -76,7 +79,7 @@ end
 
 
 %-Format arguments
-%-----------------------------------------------------------------------
+%----------------------------------------------------------------------
 if nargin == 0, Action = 'Welcome'; else, Action = varargin{1}; end
 
 
@@ -92,7 +95,7 @@ case 'welcome'                        %-load settings at toolbox startup
 %-----------------------------------------------------------------------
 
 %-change dir and add working paths
-%------------------------------------------------------------------------
+%-----------------------------------------------------------------------
 if exist('ELAS','var') && isfield(ELAS,'OUTPUTpath')
     if ~isdir(ELAS.OUTPUTpath)
         ELAS.OUTPUTpath = pwd;
@@ -101,17 +104,17 @@ if exist('ELAS','var') && isfield(ELAS,'OUTPUTpath')
 end    
 addpath(genpath(ELAS.ELASpath),genpath(ELAS.SPMpath));
 
-% WARNING                                 %-WARNING - DO NOT CLOSE SPM!!!
+% WARNING                                %-WARNING - DO NOT CLOSE SPM!!!   
 %-----------------------------------------------------------------------
 msg = sprintf(['Do NOT close SPM until computing is finished and '...
                'results are saved! \r\n']);
 msgbox(msg,'WARNING','warn');
 
-%-SPM8                                     %-start SPM8 under 'FMRI' mode
+%-SPM8                                    %-start SPM8 under 'FMRI' mode
 %-----------------------------------------------------------------------
 spm('FMRI');
 
-%-ELAS                               %-start electrode assignment toolbox
+%-ELAS                              %-start electrode assignment toolbox
 %-----------------------------------------------------------------------
 elas;
 
@@ -123,13 +126,13 @@ case 'elas'                           %-load settings at toolbox startup
 %-----------------------------------------------------------------------
 
 %-change dir and add working paths
-%------------------------------------------------------------------------
+%-----------------------------------------------------------------------
 if exist('ELAS','var') && isfield(ELAS,'OUTPUTpath')
     cd(ELAS.OUTPUTpath);
 end    
 addpath(genpath(ELAS.ELASpath),genpath(ELAS.SPMpath));
 
-%-ELAS                               %-start electrode assignment toolbox
+%-ELAS                              %-start electrode assignment toolbox
 %-----------------------------------------------------------------------
 elas;
 
