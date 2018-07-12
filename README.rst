@@ -13,15 +13,13 @@ installation
 
 1. Install SPM12 from http://www.fil.ion.ucl.ac.uk/spm/software/spm12/
 
-2. Install ELAS, e.g.:
+2. Install SPM Anatomy toolbox v2.2c from http://www.fz-juelich.de/inm/inm-1/DE/Forschung/_docs/SPMAnatomyToolbox/SPMAnatomyToolbox_node.html
+
+3. Install ELAS, e.g.:
 
 .. code-block:: bash
 
   git clone https://github.com/joosbehncke/elas
-
-3. Edit:	.../elas/startup_elas.m	
-  
-    set local SPM path at section “EDIT SPM PATH HERE!!!” 
 
 
 documentation
