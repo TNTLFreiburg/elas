@@ -325,7 +325,8 @@ elseif (PreTypeChoice == 2 || PreTypeChoice == 3) && PreAssChoice == 1
     %-implement plot
     %-------------------------------------------------------------------
     if assignment_method.plot
-        figure('color','w'); hold on
+        figure('Name','hull projection','Numbertitle','off','color','k') 
+        hold on
         % plots normalized brain for visualization    
         cS=zeros(length(FVplot.vertices),1);
         patch('Faces', FVplot.faces, 'Vertices', FVplot.vertices,...
@@ -338,7 +339,6 @@ elseif (PreTypeChoice == 2 || PreTypeChoice == 3) && PreAssChoice == 1
         set(gca,'xdir','reverse')
         camlight headlight
         view(66,2)    
-        set(gcf, 'color', [0.94 0.94 0.94])
         axis equal
         axis off
     end
@@ -598,7 +598,8 @@ elseif (PreTypeChoice == 2 || PreTypeChoice == 3) && PreAssChoice == 2
     %-implement plot
     %-------------------------------------------------------------------
     if assignment_method.plot
-        figure('color','w'); hold on
+        figure('Name','hull projection','Numbertitle','off','color','k') 
+        hold on
         % plots normalized brain for visualization    
         cS=zeros(length(FVplot.vertices),1);
         patch('Faces', FVplot.faces, 'Vertices', FVplot.vertices,...
@@ -611,7 +612,6 @@ elseif (PreTypeChoice == 2 || PreTypeChoice == 3) && PreAssChoice == 2
         set(gca,'xdir','reverse')
         camlight headlight
         view(66,2)    
-        set(gcf, 'color', [0.94 0.94 0.94])
         axis equal
         axis off
     end
