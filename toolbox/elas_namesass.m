@@ -10,7 +10,7 @@ function [E] = elas_namesass
 % INPUT
 %          '*.mat'-file has to be loaded, containing coordinates in values 
 %          of the MNI space:
-%          mri_dat = struct(...
+%          mni_dat = struct(...
 %                     X, ...      (nx1 double) x-coords, electrodes
 %                     Y, ...      (nx1 double) y-coords, electrodes
 %                     Z, ...      (nx1 double) z-coords, electrodes
@@ -49,19 +49,31 @@ end
 sulci = questdlg('Does mri data include sulci?', 'Select sulci option', ...
                  'Yes','No','Yes');
 load([pathname filename])
+if exist('mni_dat', 'var')
+elseif exist('mri_dat', 'var')
+    mni_dat = mri_dat;
+else
+    msg = 'Loaded file doesn''t contain struct ''mni_dat''. Please check!';
+    msgbox(msg,'WARNING','warn');
+    warning('off','backtrace')
+    warning(msg)
+    warning('on','backtrace')
+    fprintf('ELAS>   Done! \n')
+    return  
+end
 load([ELAS.ASSIGNMENTSCRIPTpath filesep 'ICBM152_HD_213.mat'])
 S.cS = zeros(length(S.vS),1);
 
 % set saving name and electrode vector
 %-----------------------------------------------------------------------
 while 1
-    if isfield(mri_dat, 'patID')
-        init_pseu = mri_dat.patID;
+    if isfield(mni_dat, 'patID')
+        init_pseu = mni_dat.patID;
     else
         init_pseu = 'patient';
     end
-    if isfield(mri_dat, 'group')
-        init_grp = mri_dat.group;
+    if isfield(mni_dat, 'group')
+        init_grp = mni_dat.group;
     else
         init_grp = 'e.g. G';
     end
@@ -84,14 +96,14 @@ end
 % [99 138 69]. Here, this has to be considered when transforming MNI
 % coordinates to MRI.
 %-----------------------------------------------------------------------
-if size(mri_dat.X,2) ~= 1
-    X = mri_dat.X';
-    Y = mri_dat.Y';
-    Z = mri_dat.Z';
+if size(mni_dat.X,2) ~= 1
+    X = mni_dat.X';
+    Y = mni_dat.Y';
+    Z = mni_dat.Z';
 else
-    X = mri_dat.X;
-    Y = mri_dat.Y;
-    Z = mri_dat.Z;
+    X = mni_dat.X;
+    Y = mni_dat.Y;
+    Z = mni_dat.Z;
 end
 srcPar.OR = [99 138 69];
 [elecCoords,~] = transfCS([X, Y, Z],'mni','mri', srcPar);
@@ -99,12 +111,12 @@ data.x = elecCoords(:,1);
 data.y = elecCoords(:,2);
 data.z = elecCoords(:,3);
 if strcmp(sulci, 'Yes')
-    if size(mri_dat.sX,2) ~= 1
-        mri_dat.sX = mri_dat.sX';
-        mri_dat.sY = mri_dat.sY';
-        mri_dat.sZ = mri_dat.sZ';
+    if size(mni_dat.sX,2) ~= 1
+        mni_dat.sX = mni_dat.sX';
+        mni_dat.sY = mni_dat.sY';
+        mni_dat.sZ = mni_dat.sZ';
     end
-    [elecCoords,~] = transfCS([mri_dat.sX, mri_dat.sY, mri_dat.sZ], ...
+    [elecCoords,~] = transfCS([mni_dat.sX, mni_dat.sY, mni_dat.sZ], ...
                               'mni','mri', srcPar);
     data.sx = elecCoords(:,1);
     data.sy = elecCoords(:,2);
