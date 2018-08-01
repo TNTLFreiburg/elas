@@ -67,13 +67,7 @@ function [out,vals] = transfCS(varargin)
 %          see: <http://neuroimage.usc.edu/brainstorm/CoordinateSystems#MRI_coordinates>
 %
 %         
-% JBehncke, Mar'16
-
-
-%==========================================================================
-%-Add paths for calculation scripts
-%==========================================================================
-addpath('\\172.30.0.119\archive\matlab_toolboxes\matGeom\geom3d')
+% JBehncke, Aug'18
 
 
 %==========================================================================
