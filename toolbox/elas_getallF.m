@@ -36,24 +36,10 @@ end
 %=======================================================================
 % - enter subject name
 %=======================================================================
-%-guess pseudonym
-%-----------------------------------------------------------------------
 if ischar(filename) 
-    pos = strfind(filename,'_');
-    if isempty(pos)
-        pseuSuggest = '';
-    else
-        pseuSuggest = filename(1:pos(end-1)-1); 
-    end
     loopSz = 1;
     load([pathname filename])
 else
-    pos = strfind(filename{1,1},'_');
-    if isempty(pos)
-        pseuSuggest = '';
-    else
-        pseuSuggest = filename{1,1}(1:pos(end-1)-1);  
-    end
     loopSz = size(filename,2);
     load([pathname filename{1,1}])
 end
@@ -61,7 +47,7 @@ if isfield(F, 'patID')
     H.subjName = F.patID;
 else
     inputH = inputdlg({'Enter pseudonym of patient:'},...
-                    'Input',1,{pseuSuggest});
+                    'Input',1,{''});
     if isempty(inputH)
         disp('ELAS>   ERROR: No pseudonym defined!');
         H = [];
@@ -113,9 +99,11 @@ for a = 1:loopSz             % for each file containing F
         H.channels(1,cnt).sulci = F.sulci{1,b};
         if isfield(F,'matter')
             H.channels(1,cnt).ass_matterType = F.matter{1,b};
-            H.channels(1,cnt).p_grayMatter = F.matter_num{1,b}(1,1);
-            H.channels(1,cnt).p_whiteMatter = F.matter_num{1,b}(2,1);
-            H.channels(1,cnt).p_cerebroSpinalFluid = F.matter_num{1,b}(3,1);
+            if ~strcmp(F.matter{1,b},'n.a.')
+                H.channels(1,cnt).p_grayMatter = F.matter_num{1,b}(1,1);
+                H.channels(1,cnt).p_whiteMatter = F.matter_num{1,b}(2,1);
+                H.channels(1,cnt).p_cerebroSpinalFluid = F.matter_num{1,b}(3,1);
+            end
         else
             H.channels(1,cnt).ass_matterType = [];
             H.channels(1,cnt).p_grayMatter = [];

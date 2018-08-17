@@ -113,6 +113,13 @@ function link2viz_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 elas('Viz');
 
+% --- Executes on button press in link2viz.
+function link2vr_Callback(hObject, eventdata, handles)
+% hObject    handle to link2viz (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+elas('VR');
+
 
 % --- Executes on selection change in link2create.
 function link2create_Callback(hObject, eventdata, handles)

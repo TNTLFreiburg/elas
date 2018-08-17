@@ -131,51 +131,54 @@ if PreTypeChoice == 1
                ELAS.OUTPUTpath);
     if isequal([filename,pathname],[0,0])
         disp('ELAS>   ERROR: No file selected!');
-        fprintf('ELAS>   Done! \n')
-        return
-    end    
-    [gmri, origin_gmri.OR] = elas_imgread(filename,pathname);
-    % white matter       
-    [filename, pathname] = uigetfile( ...
-               {'*.img;*.nii', 'All Image-Files'},...
-               'Select segmented white matter file (c2*.img,c2*.nii)',...
-               pathname);
-    if isequal([filename,pathname],[0,0])
-        disp('ELAS>   ERROR: No file selected!');
-        fprintf('ELAS>   Done! \n')
-        return
-    end    
-    [wmri, origin_wmri.OR] = elas_imgread(filename,pathname);
-    % cerebrospinal fluid (CSF)
-    [filename, pathname] = uigetfile( ...
-               {'*.img;*.nii', 'All Image-Files'},...
-               'Select segmented CSF file (c3*.img,c3*.nii)',...
-               pathname);
-    if isequal([filename,pathname],[0,0])
-        disp('ELAS>   ERROR: No file selected!');
-        fprintf('ELAS>   Done! \n')
-        return
-    end
-    [csfmri, origin_csfmri.OR] = elas_imgread(filename,pathname);
+        warning('No assignment to matter type! Continuing..')
+    else
+        [gmri, origin_gmri.OR] = elas_imgread(filename,pathname);
+        % white matter       
+        [filename, pathname] = uigetfile( ...
+                   {'*.img;*.nii', 'All Image-Files'}, ...
+                   ['Select segmented white matter file ' ...
+                   '(c2*.img,c2*.nii)'],pathname);
+        if isequal([filename,pathname],[0,0])
+            disp('ELAS>   ERROR: No file selected!');
+            fprintf('ELAS>   Done! \n')
+            return
+        end    
+        [wmri, origin_wmri.OR] = elas_imgread(filename,pathname);
+        % cerebrospinal fluid (CSF)
+        [filename, pathname] = uigetfile( ...
+                   {'*.img;*.nii', 'All Image-Files'},...
+                   'Select segmented CSF file (c3*.img,c3*.nii)',...
+                   pathname);
+        if isequal([filename,pathname],[0,0])
+            disp('ELAS>   ERROR: No file selected!');
+            fprintf('ELAS>   Done! \n')
+            return
+        end
+        [csfmri, origin_csfmri.OR] = elas_imgread(filename,pathname);
 
+        % transform coordinates
+        %---------------------------------------------------------------
+        [tmpcoorg,~] = transfCS([E.mnix, E.mniy, E.mniz], 'mni', ...
+                                                    'mri', origin_gmri);
+        [tmpcoorw,~] = transfCS([E.mnix, E.mniy, E.mniz], 'mni', ...
+                                                    'mri', origin_wmri);
+        [tmpcoorc,~] = transfCS([E.mnix, E.mniy, E.mniz], 'mni', ...
+                                                  'mri', origin_csfmri);        
+    end    
+    
     % assign electrodes to matter type
     %-------------------------------------------------------------------
     fprintf('ELAS>   Assigning electrodes to matter type...\n')
     matter = cell(1,numel(E.mnix));
     matter_num = cell(1,numel(E.mnix));
-    maxInd = NaN(1,numel(E.mnix));    
-    [tmpcoorg,~] = transfCS([E.mnix, E.mniy, E.mniz], 'mni', 'mri', ...
-                                                           origin_gmri);
-    [tmpcoorw,~] = transfCS([E.mnix, E.mniy, E.mniz], 'mni', 'mri', ...
-                                                           origin_wmri);
-    [tmpcoorc,~] = transfCS([E.mnix, E.mniy, E.mniz], 'mni', 'mri', ...
-                                                         origin_csfmri);
+    maxInd = NaN(1,numel(E.mnix)); 
     for a = 1:numel(E.mnix)
         try
             matter_num{1,a} = cat(1, ...
-                    gmri(tmpcoorg(a,1),tmpcoorg(a,2),tmpcoorg(a,3)),...
-                    wmri(tmpcoorw(a,1),tmpcoorw(a,2),tmpcoorw(a,3)),...
-                    csfmri(tmpcoorc(a,1),tmpcoorc(a,2),tmpcoorc(a,3)));
+                 gmri(tmpcoorg(a,1),tmpcoorg(a,2),tmpcoorg(a,3)),...
+                 wmri(tmpcoorw(a,1),tmpcoorw(a,2),tmpcoorw(a,3)),...
+                 csfmri(tmpcoorc(a,1),tmpcoorc(a,2),tmpcoorc(a,3)));
             [~,maxInd(1,a)] = max(matter_num{1,a});
             if maxInd(1,a) == 1
                 matter{1,a} = 'Grey Matter';
@@ -185,8 +188,8 @@ if PreTypeChoice == 1
                 matter{1,a} = 'Cerebro-Spinal Fluid';
             end
         catch
-            warning(['Assignment to matter type not possible for ' ...
-                     'electrode #%d! Assignment skipped...'], a)
+            warning(['Assignment to matter type not possible ' ...
+                     'for electrode #%d! Assignment skipped...'], a)
             matter{1,a} = 'n.a.';
         end
     end
@@ -256,9 +259,6 @@ if PreTypeChoice == 1
     F.matter = matter;
     F.matter_num = matter_num;
     F.sulci = sulci;
-    if isfield(E, 'mri_origin')
-        F.mri_origin = E.mri_origin;
-    end
     
     reverseStr = '';
     for a = 1:numel(E.mnix)
@@ -537,9 +537,6 @@ elseif (PreTypeChoice == 2 || PreTypeChoice == 3) && PreAssChoice == 1
         end
     end
     F.assign_coord = assign_coord;
-    if isfield(E, 'mri_origin')
-        F.mri_origin = E.mri_origin;
-    end
 
 
 elseif (PreTypeChoice == 2 || PreTypeChoice == 3) && PreAssChoice == 2
@@ -682,9 +679,6 @@ elseif (PreTypeChoice == 2 || PreTypeChoice == 3) && PreAssChoice == 2
         end
         F.all_assign{e} = all_assign;
         F.all_assign_num(e) = all_assign_num;
-        if isfield(E, 'mri_origin')
-            F.mri_origin = E.mri_origin;
-        end
 
     end
     

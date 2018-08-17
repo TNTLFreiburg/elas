@@ -28,7 +28,7 @@ global MAP ELAS
 %=======================================================================
 % - probabilitic MAP (loading)
 %=======================================================================
-MapName = [ELAS.SPMANApath filesep 'Anatomy_v22c_MPM.matt']; 
+MapName = [ELAS.SPMANApath filesep 'Anatomy_v22c_MPM.mat']; 
 se_getMap('anat',MapName);
 
 %=======================================================================

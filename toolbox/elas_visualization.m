@@ -71,9 +71,7 @@ end
 %=======================================================================
 % - get meta info
 %=======================================================================
-S.cS = zeros(length(S.vS),1);
 srcPar_areas.OR = [76 116 64];
-srcPar.OR = [99 138 69];
 %-get electrode groups
 electrodes.subjName = H.subjName;
 all_groups = unique({H.channels(:).group});
@@ -84,10 +82,11 @@ for a = 1:numel(all_groups)
     electrodes.groups{2,a} = all_groups{a};
 end
 %-convert electrodes coordinates
-[electrodes.xyz,~] = transfCS([[H.channels(:).MNI_x]', ...
-                               [H.channels(:).MNI_y]', ...
-                               [H.channels(:).MNI_z]'], ...
-                               'mni','mri', srcPar);
+for a = 1:numel(H.channels)
+    electrodes.xyz(a,:) = [H.channels(a).MNI_x, ...
+                           H.channels(a).MNI_y, ...
+                           H.channels(a).MNI_z];
+end
                            
 %=======================================================================
 % - extract areas
@@ -121,14 +120,12 @@ if PreAreaChoice == 1
                                      ind2sub(size(mri.image.data),xyz);
         [areas{a},~] = transfCS([areas{a}(:,1), areas{a}(:,2), ...
                             areas{a}(:,3)], 'mri','mni', srcPar_areas);
-        [areas{a},~] = transfCS([areas{a}(:,1), areas{a}(:,2), ...
-                                  areas{a}(:,3)], 'mni','mri', srcPar);
         if area_locs(3,a) == 1
         elseif area_locs(2,a) == 1
-            rightHem = areas{a}(:,1) >= srcPar.OR(1);
+            rightHem = areas{a}(:,1) >= 0;
             areas{a} = areas{a}(rightHem,:);
         else
-            leftHem = areas{a}(:,1) <= srcPar.OR(1);
+            leftHem = areas{a}(:,1) <= 0;
             areas{a} = areas{a}(leftHem,:);
         end
     end
@@ -144,8 +141,6 @@ elseif PreAreaChoice == 2
                                      ind2sub(size(mri.image.data),xyz);
         [areas{a},~] = transfCS([areas{a}(:,1), areas{a}(:,2), ...
                             areas{a}(:,3)], 'mri','mni', srcPar_areas);
-        [areas{a},~] = transfCS([areas{a}(:,1), areas{a}(:,2), ...
-                                  areas{a}(:,3)], 'mni','mri', srcPar);
     end
 else
     load([ELAS.ASSIGNMENTSCRIPTpath filesep 'areasv22.mritv_session.mat'])
@@ -158,8 +153,6 @@ else
                                      ind2sub(size(mri.image.data),xyz);
         [areas{a},~] = transfCS([areas{a}(:,1), areas{a}(:,2), ...
                             areas{a}(:,3)], 'mri','mni', srcPar_areas);
-        [areas{a},~] = transfCS([areas{a}(:,1), areas{a}(:,2), ...
-                                  areas{a}(:,3)], 'mni','mri', srcPar);
     end
 end
    
@@ -167,7 +160,7 @@ end
 % - call plot function
 %=======================================================================
 fprintf('ELAS>   Plot selection... \r')
-[~] = elas_vizGUI(electrodes, areas, getmaps,  S);
+[~] = elas_vizGUI(electrodes, areas, getmaps, S);
 %=======================================================================
 
 fprintf('ELAS>   Done! \n')

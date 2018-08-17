@@ -92,6 +92,9 @@ function varargout = elas(varargin)
 % FORMAT elas('Viz')
 % Start visualization GUI.
 %
+% FORMAT elas('VR')
+% Start export of data to VR format (wavefront *.obj files).
+%
 %=======================================================================
 
 
@@ -127,7 +130,7 @@ fprintf('\n Starting electrode assignment toolbox...\r')
 elaswelcome = openfig(fullfile(elas('Dir'), 'welcome_elas.fig'), ...
                                                     'new', 'invisible');
 set(elaswelcome,'name',sprintf('%s','electrode assignment tb'));
-set(elaswelcome,'Units','pixels','Position',[609 645 540 465]);
+% set(elaswelcome,'Units','pixels','Position',[609 645 540 465]);
 set(elaswelcome,'Visible','on');
 fprintf(' Ready!\r')
 
@@ -262,6 +265,14 @@ case 'viz'                                         %-start visualization
 % elas('viz')
 %-----------------------------------------------------------------------
 elas_visualization
+
+
+%=======================================================================
+case 'vr'                                              %-start VR export
+%=======================================================================
+% elas('vr')
+%-----------------------------------------------------------------------
+elas_extractobj
 
 
 %=======================================================================

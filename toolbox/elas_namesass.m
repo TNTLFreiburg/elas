@@ -23,7 +23,7 @@ function [E] = elas_namesass
 % OUTPUT
 %          '*savename*_E.mat'
 %
-% JBehncke, June'18 (TBall, HRuescher)
+% JBehncke, June'18
 
 fprintf('\nELAS>   Still computing... \r')
 
@@ -36,17 +36,17 @@ global ELAS
 %=======================================================================
 if exist('ELAS','var') && isfield(ELAS,'OUTPUTpath')
     [filename, pathname] = uigetfile([ELAS.OUTPUTpath filesep '*.mat'],...
-                                    'Select file containing mri variable');
+                                    'Select file containing mni variable');
 else
     [filename, pathname] = uigetfile('*.mat',...
-                                    'Select file containing mri variable');
+                                    'Select file containing mni variable');
 end
 if isequal([filename,pathname],[0,0])
     msgbox('No file selected!','WARNING','warn');
     fprintf('ELAS>   Done! \n')
     return  
 end 
-sulci = questdlg('Does mri data include sulci?', 'Select sulci option', ...
+sulci = questdlg('Does mni data include sulci?', 'Select sulci option', ...
                  'Yes','No','Yes');
 load([pathname filename])
 if exist('mni_dat', 'var')
@@ -62,7 +62,6 @@ else
     return  
 end
 load([ELAS.ASSIGNMENTSCRIPTpath filesep 'ICBM152_HD_213.mat'])
-S.cS = zeros(length(S.vS),1);
 
 % set saving name and electrode vector
 %-----------------------------------------------------------------------
@@ -91,11 +90,6 @@ end
 %=======================================================================
 % - get mri data (open source)
 %=======================================================================
-% GET THE RIGHT COORDINATES:
-% The ICBM brain is stored in MRI coordinates and has its MNI origin in
-% [99 138 69]. Here, this has to be considered when transforming MNI
-% coordinates to MRI.
-%-----------------------------------------------------------------------
 if size(mni_dat.X,2) ~= 1
     X = mni_dat.X';
     Y = mni_dat.Y';
@@ -105,22 +99,18 @@ else
     Y = mni_dat.Y;
     Z = mni_dat.Z;
 end
-srcPar.OR = [99 138 69];
-[elecCoords,~] = transfCS([X, Y, Z],'mni','mri', srcPar);
-data.x = elecCoords(:,1);
-data.y = elecCoords(:,2);
-data.z = elecCoords(:,3);
+data.x = X;
+data.y = Y;
+data.z = Z;
 if strcmp(sulci, 'Yes')
     if size(mni_dat.sX,2) ~= 1
         mni_dat.sX = mni_dat.sX';
         mni_dat.sY = mni_dat.sY';
         mni_dat.sZ = mni_dat.sZ';
     end
-    [elecCoords,~] = transfCS([mni_dat.sX, mni_dat.sY, mni_dat.sZ], ...
-                              'mni','mri', srcPar);
-    data.sx = elecCoords(:,1);
-    data.sy = elecCoords(:,2);
-    data.sz = elecCoords(:,3);
+    data.sx = mni_dat.sX;
+    data.sy = mni_dat.sY;
+    data.sz = mni_dat.sZ;
 else
     data.sx = [];
 end
@@ -191,7 +181,6 @@ E.mniz = Z;
 E.mniy = Y;
 E.patID = inputAss{1,1};
 E.group = inputAss{2,1};
-E.mri_origin = srcPar.OR;
 
 % assignment 2 names
 %-----------------------------------------------------------------------
