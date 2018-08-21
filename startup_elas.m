@@ -73,8 +73,32 @@ end
 %-directory to local, personal output folder
 %-----------------------------------------------------------------------
 if ~isfield(ELAS,'OUTPUTpath')
-	ELAS.OUTPUTpath = uigetdir(pwd,...
-                      'Please select directory for data output...');
+    rawdirs = dir(ELAS.ELASpath);
+    rawdirs(1:2) = [];
+    rawdirs = rawdirs([rawdirs.isdir]);
+    alldirs = cell(numel(rawdirs),1);
+    for a = 1:numel(rawdirs)
+        alldirs{a} = [rawdirs(a).folder filesep rawdirs(a).name];
+    end
+    alldirs{numel(alldirs)+1} = ELAS.SPMpath;
+    alldirs{numel(alldirs)+1} = [ELAS.SPMpath filesep 'toolbox' ...
+                                              filesep 'Anatomy'];
+    alldirs{numel(alldirs)+1} = ELAS.MTVpath;
+    %-check whether output folder is not a system folder
+    while 1
+        ELAS.OUTPUTpath = uigetdir(pwd,...
+                      'Please select directory for data output...');       
+        if sum(strcmp(ELAS.OUTPUTpath, alldirs)) ~= 0
+            wrongdir = alldirs(strcmp(ELAS.OUTPUTpath, alldirs));
+            warning('off','backtrace')
+            warning(['Do not select system directories as ' ...
+                     'output folder! Your current selection:' ...
+                     '\n%s'], wrongdir{1})
+            warning('on','backtrace')
+        else
+            break
+        end
+    end
 end 
 
 
