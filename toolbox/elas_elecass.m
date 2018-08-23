@@ -325,7 +325,8 @@ elseif (PreTypeChoice == 2 || PreTypeChoice == 3) && PreAssChoice == 1
     %-implement plot
     %-------------------------------------------------------------------
     if assignment_method.plot
-        figure('Name','hull projection','Numbertitle','off','color','k') 
+        figure('Name','elas: hull projection','Numbertitle','off', ...
+               'color','k') 
         hold on
         % plots normalized brain for visualization    
         cS=zeros(length(FVplot.vertices),1);
@@ -595,7 +596,8 @@ elseif (PreTypeChoice == 2 || PreTypeChoice == 3) && PreAssChoice == 2
     %-implement plot
     %-------------------------------------------------------------------
     if assignment_method.plot
-        figure('Name','hull projection','Numbertitle','off','color','k') 
+        figure('Name','elas: hull projection','Numbertitle','off', ...
+               'color','k') 
         hold on
         % plots normalized brain for visualization    
         cS=zeros(length(FVplot.vertices),1);

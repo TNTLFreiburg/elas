@@ -38,7 +38,7 @@ end
 faces = [];
 reverseStr = '';
 for b = 1:size(vertices,1)
-    msg = sprintf('ELAS>   Converting vertex %d/%d\n', ...
+    msg = sprintf('        Converting vertex %d/%d\n', ...
                    b, size(vertices,1));
     fprintf([reverseStr, msg])
     reverseStr = repmat(sprintf('\b'), 1, length(msg));

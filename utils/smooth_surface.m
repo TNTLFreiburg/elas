@@ -36,8 +36,10 @@ end
 storevert = vertices;
 for a = 1:size(storevert,1)
     vertenv = unique(faces(sum(faces == a,2) ~= 0,:));
-    storevert(a,:) = (vertices(a,:) + ...
+    if ~isempty(vertenv)
+        storevert(a,:) = (vertices(a,:) + ...
                             alpha*mean(vertices(vertenv,:)))/(1+alpha);
+    end
 end
 
 %-write output

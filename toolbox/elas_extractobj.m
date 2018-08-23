@@ -164,17 +164,21 @@ if params.areas
         else
             filetag = '';
         end
-        A.cS = zeros(length(A.vertices),1);                
-        %-save areas
+        %-calculate vertex normals
+        evalc('A = calculate_normals(A)');
+        A.cS = zeros(length(A.vertices),1);         
+        %-export areas
         fprintf('ELAS>   Export area %d/%d (%s)... \r', ...
                  a, size(areas,1), H.channels(a).name)
-        y_bu = A.faces(:,2);
-        A.faces(:,2) = A.faces(:,3);
-        A.faces(:,3) = y_bu;
-        vertface2obj(A.vertices,A.faces, [ELAS.OUTPUTpath filesep ...
-                     'surface_' getmaps(a).name filetag '.obj'])
-        save([ELAS.OUTPUTpath filesep 'surface_' getmaps(a).name ...
-              filetag '.mat'], 'A')
+        y_bu = A.vertices(:,2);
+        A.vertices(:,2) = A.vertices(:,3);
+        A.vertices(:,3) = y_bu;
+        y_bu = A.vertexnormals(:,2);
+        A.vertexnormals(:,2) = A.vertexnormals(:,3);
+        A.vertexnormals(:,3) = y_bu;
+        vertface2obj(A.vertices,A.faces, A.vertexnormals, ...
+                     [ELAS.OUTPUTpath filesep 'surface_' ...
+                     getmaps(a).name filetag '.obj'])
     end 
 end
 
