@@ -16,7 +16,7 @@ function varargout = elas(varargin)
 %
 % SOFTWARE
 %         ELAS (electrode assignment toolbox), software available under
-%         
+%         https://github.com/joosbehncke/elas
 %
 %         SPM (statistical parametric mapping), software available under
 %         http://www.fil.ion.ucl.ac.uk/spm/software/spm12/

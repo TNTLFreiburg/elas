@@ -1,8 +1,9 @@
 function elas_elecass
 
 % FUNCTION (under ELAS) to perform hierarchic probabilisitc assignment 
-%          (HPA) and probabilistic assignment (PA) to anatomic regions, and  
-%          assignment to matter type (for depth electrodes)
+%          (HPA) and probabilistic assignment (without cortical projection
+%          to anatomic regions, and assignment to matter type (for depth 
+%          electrodes)
 %
 % DESCRIPTION In this step, the electrodes are assigned to a specific    
 %          anatomic region. Besides, the segmentation images are used to
@@ -11,9 +12,9 @@ function elas_elecass
 %          coordinates and the electrode names, as well as the names of 
 %          the assigned anatomic regions and the matter type.   
 %
-%          ECoG-Grid and ECoG-Gtrip: choice between HPA and PA for surface
-%                   electrodes
-%          SEEG:    PA for depth electrodes
+%          ECoG-Grid and ECoG-Gtrip: choice between HPA and probabilistic 
+%                   assignment for surface electrodes
+%          SEEG:    probabilistic assignment for depth electrodes
 %          other:   e.g. EEG, EMG, EOG, ECG, Trigger: no assignment, only 
 %                   names of channels and signal type will be passed to 
 %                   variable F
@@ -93,7 +94,7 @@ if PreTypeChoice == 2 || PreTypeChoice == 3
         'Select assignment technique:', ...
         'SelectionMode','single',...
         'ListString', {'Hierarchical Probabilistic Assignment (HPA)'...
-                       'Probabilistic Assignment (PA)'},...
+                       'Probabilistic Assignment'},...
         'ListSize', [400 30],...
         'Name', 'Assignment technique');      
     if isempty(PreAssChoice)
@@ -114,8 +115,8 @@ if PreTypeChoice == 1
     
     %___________________________________________________________________
     %
-    % Probabilisitic Assignment (PA) for stereotactic and interhemispheric 
-    % electrodes
+    % Probabilisitic Assignment for stereotactic and interhemispheric 
+    % electrodes, without cortical projection
     %
     % Assignment of electrodes to the type of matter by using images  
     % after segmentation. Every pixel in the pre-implantation image  
@@ -204,61 +205,40 @@ if PreTypeChoice == 1
     fprintf('ELAS>   Loading variables...\n')
     load([lpath filesep 'areasv22.mritv_session.mat'])
     load([lpath filesep 'AllAreas_v22_MPM.mat'])
-    [an,~] = xlsread([lpath filesep 'areas_v22.xls']);
+%     [an,~] = xlsread([lpath filesep 'areas_v22.xls']);
     load([lpath filesep 'Macro.mat'])
     load([lpath filesep 'macrolabels.mat'])
     load([lpath filesep 'FV_no_cerebellum.mat'], 'FV', 'FVplot')
     
-    %-define assignment method
-    %-------------------------------------------------------------------
-    assignment_method.method = 1;  	% 1 -> purely normal based
-    assignment_method.plot = 0;  	% 1 -> plot normals
-    assignment_method.mindist = 5;	% all hull points <= this distance in mm
-                                    % are projected onto the probabilistc maps 
-    
-    %-get grey values
-    %-------------------------------------------------------------------
-    gv = NaN(1,numel(MAP));
-    for a = 1:numel(MAP)                                                  
-        gv(a) = MAP(a).GV; 
-    end
-    all_areas = gv(an >= 0);
-
-    %-create assign_coord and all_assign_num looping over electrodes 
-    %-------------------------------------------------------------------
-    fprintf('ELAS>   Creating assignment coordinates...\n')
-    assign_coord = NaN(3,numel(E.mnix));
-    proj_coord = NaN(3,numel(E.mnix));
-    all_assign_num = NaN(1,numel(E.mnix));
-    sulci = cell(1,numel(E.mnix));
-%     figure, hold on
-    for a = 1:numel(E.mnix)
-        assign_coord(:,a) = cat(1,E.mnix(a),E.mniy(a),E.mniz(a));
-        [all_assign_num(a),~,temp_coord] = ...
-                   electrode_assignment([E.mnix(a),E.mniy(a),E.mniz(a)], ...
-                   all_areas,assignment_method,mri); 
-        proj_coord(:,a) = temp_coord';
-        if all_assign_num(a) > 0
-            all_assign_num(a) = all_assign_num(a) - min(gv)+1;
-        end 
-        sulci{1,a} = [];
-    end
-%     close(gcf)
+%     %-define assignment method
+%     %-------------------------------------------------------------------
+%     assignment_method.method = 1;  	% 1 -> purely normal based
+%     assignment_method.plot = 0;  	% 1 -> plot normals
+%     assignment_method.mindist = 5;	% all hull points <= this distance in mm
+%                                     % are projected onto the probabilistc maps 
+%     
+%     %-get grey values
+%     %-------------------------------------------------------------------
+%     gv = NaN(1,numel(MAP));
+%     for a = 1:numel(MAP)                                                  
+%         gv(a) = MAP(a).GV; 
+%     end
+%     all_areas = gv(an >= 0);
 
     % write results into variable 'F' & get information from anatomy tb script
     %-------------------------------------------------------------------
     F.names  = E.names;
     F.signalType = inputType;
-    F.assign_coord = assign_coord;
-    F.projection_coord = proj_coord;
+    F.assign_coord = NaN(3,numel(E.mnix));
+    F.projection_coord = 'no projection';
     F.label = cell(1,size(E.mnix,2));
     F.all_assign = cell(1,size(E.mnix,2));
-    F.all_assign_num = all_assign_num;
+    F.all_assign_num = NaN(1,numel(E.mnix));
     F.p_area = cell(1,size(E.mnix,2));
     F.p_bnds = cell(1,size(E.mnix,2));
     F.matter = matter;
     F.matter_num = matter_num;
-    F.sulci = sulci;
+    F.sulci = cell(1,numel(E.mnix));
     
     reverseStr = '';
     for a = 1:numel(E.mnix)
@@ -266,18 +246,20 @@ if PreTypeChoice == 1
                        'areas: electrode %d/%d\n'], a, numel(E.mnix));
     	fprintf([reverseStr, msg])
         reverseStr = repmat(sprintf('\b'), 1, length(msg));
+        F.assign_coord(:,a) = cat(1,E.mnix(a),E.mniy(a),E.mniz(a));
         evalc('elAss = se_TabList_mod(E.mnix(a), E.mniy(a), E.mniz(a))');
         F.all_assign{1,a} = elAss.probabAss_area;
         F.p_area{1,a} = elAss.probabAss_elec;
         F.p_bnds{1,a} = elAss.probabAss_bnds;
         F.label{1,a} = elAss.brainAtlas;
+        F.sulci{1,a} = [];
     end
 
 elseif (PreTypeChoice == 2 || PreTypeChoice == 3) && PreAssChoice == 1
     
     %___________________________________________________________________
     %
-	% Hierarchical Probabilisitic Assignment (HPA) for grid & strip electrodes
+	% HPA for grid & strip electrodes
     %___________________________________________________________________
     
     % select root paths and load variables
@@ -291,7 +273,7 @@ elseif (PreTypeChoice == 2 || PreTypeChoice == 3) && PreAssChoice == 1
     fprintf('ELAS>   Loading variables...\n')
 	load([lpath filesep 'areasv22.mritv_session.mat'])
     load([lpath filesep 'AllAreas_v22_MPM.mat'])
-    [an,ann] = xlsread([lpath filesep 'areas_v22.xls']);
+    [an,~] = xlsread([lpath filesep 'areas_v22.xls']);
     lobe = xlsread([lpath filesep 'Labels.xls'],'E1:E116');
     load([lpath filesep 'FV_no_cerebellum.mat'], 'FV', 'FVplot')
     load([lpath filesep 'Macro.mat'])
@@ -428,19 +410,31 @@ elseif (PreTypeChoice == 2 || PreTypeChoice == 3) && PreAssChoice == 1
                 y = E.mniy(e);
                 z = E.mniz(e);
 
-                [assign_num,macro_num] = electrode_assignment(...
+                [assign_num,macro_num,~,all] = electrode_assignment(...
                                          [x,y,z],gv,assignment_method,mri);
                 
+                
+                % assign touched grey values to area
                 if assign_num>0
-                    assign = MAP(gv == assign_num).name;
-                    assign_num = assign_num-min(gv)+1;
-                else
-                    if assign_num == 0
-                        assign = 'n.a.';
-                    else
-                        assign = 'error';
+                    assign_num_mult = unique(all(all>0));
+                    assign = cell(1,numel(assign_num_mult));
+                    p_area = NaN(1,numel(assign_num_mult));
+                    for a = 1:numel(assign_num_mult) 
+                        assign{a} = MAP(gv == assign_num_mult(a)).name;
+                        p_area(a) = numel(find(all==assign_num_mult(a)))/ ...
+                                    numel(all(all~=0));
                     end
-                end                                  
+                    [p_area,sortInd] = sort(p_area,'descend');
+                    assign = assign(sortInd);
+                    assign_num = assign_num-min(gv)+1;
+                elseif assign_num == 0
+                    assign = 'n.a.';
+                    p_area = NaN;
+                else
+                    assign = 'error';
+                    p_area = NaN;
+                end       
+                
                 if pl == 6
                     sulci_tag = 'LS';
                 elseif pl == 7
@@ -454,12 +448,16 @@ elseif (PreTypeChoice == 2 || PreTypeChoice == 3) && PreAssChoice == 1
                     label_assign_lobe = lobe(macro_num);
                 elseif macro_num == 0
                     label_assign = 'n.a.';
+                    label_assign_num = macro_num;
+                    label_assign_lobe = 'n.a.';
                 else
                     label_assign = 'error';
+                    label_assign_num = NaN;
+                    label_assign_lobe = 'error';
                 end
                 
                 % PA of electrodes without info about CS/LS 
-                [all_assign_num,~,proj_coord] = electrode_assignment( ...
+                [all_assign_num,~,proj_coord,~] = electrode_assignment( ...
                               [x,y,z],all_areas,assignment_method,mri_all); 
                 if all_assign_num > 0
                     all_assign = MAP_all(gv_all == all_assign_num).name;
@@ -468,9 +466,11 @@ elseif (PreTypeChoice == 2 || PreTypeChoice == 3) && PreAssChoice == 1
                     all_assign = 'n.a.';
                 else
                     all_assign = 'error';
+                    all_assign_num = NaN;
                 end
                 
                 % Results of assignment are written in F
+                F.assign_coord = assign_coord;
                 F.projection_coord(:,e) = proj_coord';
                 F.label{e} = label_assign;
                 F.label_num(e) = label_assign_num;
@@ -481,6 +481,7 @@ elseif (PreTypeChoice == 2 || PreTypeChoice == 3) && PreAssChoice == 1
                 else
                     F.assign_num(e) = assign_num;
                 end
+                F.p_area{e} = p_area;
                 F.all_assign{e} = all_assign;
                 F.all_assign_num(e) = all_assign_num;
                 F.sulci{e} = sulci_tag;
@@ -491,60 +492,28 @@ elseif (PreTypeChoice == 2 || PreTypeChoice == 3) && PreAssChoice == 1
             for e = prelabels{pl}
                 fprintf(['        Bad pre-assigment for electrode #%s! ' ...
                          'Assignment skipped...\n'], char(E.names{e}))
-                reverseStr = ''; 
-                assign_num = [];
-                macro_num = NaN;
-                assign = 'n.a';  
-                
-                if macro_num > 0
-                    label_assign = char(Labels{macro_num});
-                    label_assign_num = macro_num;
-                    label_assign_lobe = lobe(macro_num);
-                elseif macro_num == 0
-                    label_assign = 'n.a.';
-                else
-                    label_assign = 'error';
-                end
-                
-                % PA of electrodes without info about CS/LS
-                [all_assign_num,~,proj_coord] = electrode_assignment( ...
-                              [x,y,z],all_areas,assignment_method,mri_all); 
-                if all_assign_num > 0
-                    all_assign = ann{gv_all == all_assign_num};
-                    all_assign_num = all_assign_num-min(gv_all)+1;
-                elseif all_assign_num == 0
-                    all_assign = 'n.a.';
-                else
-                    all_assign = 'error';
-                end
+                reverseStr = '';               
                 
                 % Results of assignment are written in F
-                F.projection_coord(:,e) = proj_coord';
-                F.label{e} = label_assign;
-                F.label_num(e) = label_assign_num;
-                F.label_num_lobe(e) = label_assign_lobe;
-                F.assign{e} = assign;
-                if isempty(assign_num)
-                    F.assign_num(e) = NaN;
-                else
-                    F.assign_num(e) = assign_num;
-                end
-                F.all_assign{e} = all_assign;
-                F.all_assign_num(e) = all_assign_num;
-                F.sulci{e} = [];
+                F.assign_coord = assign_coord;
+                F.projection_coord(:,e) = [NaN;NaN;NaN];
+                F.label{e} = 'error';
+                F.assign{e} = 'error';
+             	F.assign_num(e) = NaN;
+                F.all_assign{e} = 'error';
+                F.all_assign_num(e) = NaN;
+                F.sulci{e} = 'error';
                 
                 elecnt = elecnt + 1;
             end
         end
-    end
-    F.assign_coord = assign_coord;
-
+    end   
 
 elseif (PreTypeChoice == 2 || PreTypeChoice == 3) && PreAssChoice == 2
     
     %___________________________________________________________________
     %
-	% Probabilisitic Assignment (PA) for grid & strip electrodes
+	% Probabilisitic Assignment for grid & strip electrodes
     %___________________________________________________________________
     
     % select root paths and load variables
@@ -626,24 +595,34 @@ elseif (PreTypeChoice == 2 || PreTypeChoice == 3) && PreAssChoice == 2
                        'areas: electrode %d/%d\n'], e, numel(E.names));
         fprintf([reverseStr, msg])
         reverseStr = repmat(sprintf('\b'), 1, length(msg));
-        label_assign_num = [];
         x = E.mnix(e);
         y = E.mniy(e);
         z = E.mniz(e);
         
         % probabilistic assignment for all cortical areas
-        [assign_num,macro_num] = electrode_assignment( ...
+        [assign_num,macro_num,~,all] = electrode_assignment( ...
                                          [x,y,z],gv,assignment_method,mri); 
+        
+        % assign touched grey values to area
         if assign_num>0
-            assign = ann{gv==assign_num};
-            assign_num = assign_num-min(gv)+1;
-        else
-            if assign_num==0
-                assign = 'n.a.';
-            else
-                assign = 'error';
+            assign_num_mult = unique(all(all~=0));
+            assign = cell(1,numel(assign_num_mult));
+            p_area = NaN(1,numel(assign_num_mult));
+            for a = 1:numel(assign_num_mult) 
+                assign{a} = ann{gv==assign_num_mult(a)};
+                p_area(a) = numel(find(all==assign_num_mult(a)))/ ...
+                            numel(all(all~=0));
             end
-        end
+            [p_area,sortInd] = sort(p_area,'descend');
+            assign = assign(sortInd);
+            assign_num = assign_num-min(gv)+1;
+        elseif assign_num == 0
+            assign = 'n.a.';
+            p_area = NaN;
+        else
+            assign = 'error';
+            p_area = NaN;
+        end 
 
         if macro_num > 0
             label_assign = char(Labels{macro_num});
@@ -651,12 +630,16 @@ elseif (PreTypeChoice == 2 || PreTypeChoice == 3) && PreAssChoice == 2
             label_assign_lobe = lobe(macro_num);
         elseif macro_num == 0
             label_assign = 'n.a.';
+            label_assign_num = macro_num;
+            label_assign_lobe = 'n.a.';
         else
             label_assign = 'error';
+            label_assign_num = NaN;
+            label_assign_lobe = 'error';
         end
 
         % probabilistic assignment for all areas
-        [all_assign_num,~,proj_coord] = electrode_assignment( ...
+        [all_assign_num,~,proj_coord,~] = electrode_assignment( ...
                               [x,y,z],all_areas,assignment_method,mri_all); 
         if all_assign_num > 0
             all_assign = ann_all{gv_all == all_assign_num};
@@ -665,6 +648,7 @@ elseif (PreTypeChoice == 2 || PreTypeChoice == 3) && PreAssChoice == 2
             all_assign = 'n.a.';
         else
             all_assign = 'error';
+            all_assign_num = NaN;
         end
 
         % Results of assignment are written in F
@@ -679,6 +663,7 @@ elseif (PreTypeChoice == 2 || PreTypeChoice == 3) && PreAssChoice == 2
         else
             F.assign_num(e) = assign_num;
         end
+        F.p_area{e} = p_area;
         F.all_assign{e} = all_assign;
         F.all_assign_num(e) = all_assign_num;
 

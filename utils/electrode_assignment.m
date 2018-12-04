@@ -1,7 +1,9 @@
-function [A,M,Ca]=electrode_assignment(Emni,region,assignment_method,mri)
+function [A,M,Ca,Aall]=electrode_assignment(Emni,region, ...
+                                                     assignment_method,mri)
 
-% FUNCTION (under ELAS) to perform hierarchic probabilisitc assignment 
-%          to anatomic regions
+% FUNCTION (under ELAS) to perform an anatomical assignment based on the 
+%          a projection onto the cortical surface
+%          
 %
 % DESCRIPTION In this step, the electrodes are assigned to a specific    
 %          anatomic region.       
