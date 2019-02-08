@@ -210,21 +210,6 @@ if PreTypeChoice == 1
     load([lpath filesep 'macrolabels.mat'])
     load([lpath filesep 'FV_no_cerebellum.mat'], 'FV', 'FVplot')
     
-%     %-define assignment method
-%     %-------------------------------------------------------------------
-%     assignment_method.method = 1;  	% 1 -> purely normal based
-%     assignment_method.plot = 0;  	% 1 -> plot normals
-%     assignment_method.mindist = 5;	% all hull points <= this distance in mm
-%                                     % are projected onto the probabilistc maps 
-%     
-%     %-get grey values
-%     %-------------------------------------------------------------------
-%     gv = NaN(1,numel(MAP));
-%     for a = 1:numel(MAP)                                                  
-%         gv(a) = MAP(a).GV; 
-%     end
-%     all_areas = gv(an >= 0);
-
     % write results into variable 'F' & get information from anatomy tb script
     %-------------------------------------------------------------------
     F.names  = E.names;
@@ -271,13 +256,14 @@ elseif (PreTypeChoice == 2 || PreTypeChoice == 3) && PreAssChoice == 1
         return
     end
     fprintf('ELAS>   Loading variables...\n')
-	load([lpath filesep 'areasv22.mritv_session.mat'])
-    load([lpath filesep 'AllAreas_v22_MPM.mat'])
+	load([lpath filesep 'areasv22.mritv_session.mat'],'mri')
+    load([lpath filesep 'AllAreas_v22_MPM.mat'],'MAP')
     [an,~] = xlsread([lpath filesep 'areas_v22.xls']);
     lobe = xlsread([lpath filesep 'Labels.xls'],'E1:E116');
     load([lpath filesep 'FV_no_cerebellum.mat'], 'FV', 'FVplot')
-    load([lpath filesep 'Macro.mat'])
-    load([lpath filesep 'macrolabels.mat'])
+    load([lpath filesep 'Macro.mat'],'Labels')
+    load([lpath filesep 'macrolabels.mat'],'macrolabel')
+    load([lpath filesep 'indimaps.mat'],'MAPbins','MAPnames')
     
     % get grey values for all areas
     %-------------------------------------------------------------------
@@ -369,72 +355,82 @@ elseif (PreTypeChoice == 2 || PreTypeChoice == 3) && PreAssChoice == 1
             prelabels{10} = [prelabels{10}, e];          
         end
     end
-    prelabels{1,2} = 'parietal_occipital_temporal_v22_MPM.mat';
-    prelabels{1,3} = 'parietal_occipital_temporal_v22.mritv_session.mat';
-    prelabels{2,2} = 'frontal_v22_MPM.mat';
-    prelabels{2,3} = 'frontal_v22.mritv_session.mat';
-    prelabels{3,2} = 'parietal_occipital_v22_MPM.mat';
-    prelabels{3,3} = 'parietal_occipital_v22.mritv_session.mat';
-    prelabels{4,2} = 'temporal_occipital_v22_MPM.mat';
-    prelabels{4,3} = 'temporal_occipital_v22.mritv_session.mat';
-    prelabels{5,2} = 'parietal_occipital_temporal_v22_MPM.mat';
-    prelabels{5,3} = 'parietal_occipital_temporal_v22.mritv_session.mat';
-    prelabels{6,2} = 'temporal_occipital_v22_MPM.mat';
-    prelabels{6,3} = 'temporal_occipital_v22.mritv_session.mat';
-    prelabels{7,2} = 'frontal_parietal_v22_MPM.mat';
-    prelabels{7,3} = 'frontal_parietal_v22.mritv_session.mat';
-    prelabels{8,2} = 'frontal_parietal_v22_MPM.mat';
-    prelabels{8,3} = 'frontal_parietal_v22.mritv_session.mat';
-    prelabels{9,2} = 'all_cortical_v22_MPM.mat';
-    prelabels{9,3} = 'all_cortical_v22.mritv_session.mat';
-    prelabels{10,2} = '';
-    prelabels{10,3} = '';
+    prelabels{1,2} = 5; prelabels{1,3} = MAPnames{5};
+    prelabels{2,2} = 1; prelabels{2,3} = MAPnames{1};
+    prelabels{3,2} = 2; prelabels{3,3} = MAPnames{2};
+    prelabels{4,2} = 4; prelabels{4,3} = MAPnames{4};
+    prelabels{5,2} = 5; prelabels{5,3} = MAPnames{5};
+    prelabels{6,2} = 4; prelabels{6,3} = MAPnames{4};
+    prelabels{7,2} = 3; prelabels{7,3} = MAPnames{3};
+    prelabels{8,2} = 3; prelabels{8,3} = MAPnames{3};
+    prelabels{9,2} = 6; prelabels{9,3} = MAPnames{6};
+    prelabels{10,2} = ''; prelabels{10,3} = '';
+    
     reverseStr = '';
     elecnt = 1;
     for pl = 1:size(prelabels,1)
         if ~isempty(prelabels{pl}) && pl~=10
-            load([lpath filesep prelabels{pl,2}])
-            load([lpath filesep prelabels{pl,3}])
-            gv = NaN(1,numel(MAP));
-            for r=1:numel(MAP)           % get grey values  
-                gv(r) = MAP(r).GV; 
-            end
+            
+            %-create individual probability MAP (IPM)
+            MAP = MAP_all(1,logical(MAPbins(:,prelabels{pl,2})));
+
             for e = prelabels{pl}
                 msg = sprintf(['ELAS>   Assigning electrodes to anatomical ' ... 
                       'areas: electrode %d/%d\n'], elecnt, numel(E.names));
                 fprintf([reverseStr, msg])
                 reverseStr = repmat(sprintf('\b'), 1, length(msg));
                 
-                label_assign_num = [];
-                x = E.mnix(e);
-                y = E.mniy(e);
-                z = E.mniz(e);
-
-                [assign_num,macro_num,~,all] = electrode_assignment(...
-                                         [x,y,z],gv,assignment_method,mri);
+				% HPA for individual areas, incl projection
+				%------------------------------------------
+                %-perform cortical projection
+                [assign_num,macro_num,proj_coord,~,Call] = ...
+                           elas_cortical_projection(...
+                           [E.mnix(e) E.mniy(e) E.mniz(e)], ...
+                           all_areas,assignment_method,mri_all);
                 
+                %- MNI -> Anatomical MNI; for this step, coordinates  
+                % are expected to be MNIs
+                XYZmm = [Call(:,1) Call(:,2)-4 Call(:,3)+5]';
+                xyz = inv(MAP_all(1).MaxMap.mat) * ...
+                                [XYZmm; ones(1,size(XYZmm,2))];
+                            
+                %-get probability maps for individual areas
+                ProbMax = NaN(size(xyz,2),size(MAP,2));
+                for PM = 1:size(MAP,2)
+                    ProbMax(1:size(xyz,2),PM) = spm_sample_vol( ...
+                              MAP(PM).PMap,xyz(1,:),xyz(2,:),xyz(3,:),0)';
+                end
                 
-                % assign touched grey values to area
-                if assign_num>0
-                    assign_num_mult = unique(all(all>0));
-                    assign = cell(1,numel(assign_num_mult));
-                    p_area = NaN(1,numel(assign_num_mult));
-                    for a = 1:numel(assign_num_mult) 
-                        assign{a} = MAP(gv == assign_num_mult(a)).name;
-                        p_area(a) = numel(find(all==assign_num_mult(a)))/ ...
-                                    numel(all(all~=0));
+                %-probabilistic assignment, based on individual areas
+                tempProbs = zeros(size(ProbMax));
+                for indxx  = 1:size(XYZmm,2) 
+                    if any(ProbMax(indxx,:))
+                        Probs = find(ProbMax(indxx,1:end)>0); 
+                        for getPr = Probs
+                            [Ploc,~,~] = MinMax(MAP( ...
+                                              getPr).PMap,xyz(:,indxx));
+                            tempProbs(indxx,getPr) = Ploc;
+                        end
                     end
-                    [p_area,sortInd] = sort(p_area,'descend');
-                    assign = assign(sortInd);
-                    assign_num = assign_num-min(gv)+1;
-                elseif assign_num == 0
+                end
+                
+                %-get areas and probabilities
+                areaProbs = mean(tempProbs,1);
+                goalAreas = find(areaProbs>0);
+                if ~isempty(goalAreas)
+                    [~,sortP] = sort(areaProbs(goalAreas),'descend');
+                    assign = cell(1,size(goalAreas,2));
+                    p_area = NaN(1,size(goalAreas,2));
+                    for getPr = 1:size(goalAreas,2)
+                        assign{getPr} = MAP(goalAreas(sortP(getPr))).name;
+                        p_area(getPr) = areaProbs(goalAreas(sortP(getPr)));
+                    end
+                else
                     assign = 'n.a.';
                     p_area = NaN;
-                else
-                    assign = 'error';
-                    p_area = NaN;
-                end       
+                end    
                 
+                %-define sulci tag
                 if pl == 6
                     sulci_tag = 'LS';
                 elseif pl == 7
@@ -442,6 +438,8 @@ elseif (PreTypeChoice == 2 || PreTypeChoice == 3) && PreAssChoice == 1
                 else
                     sulci_tag = []; 
                 end               
+                
+                %-get macroanatomic labels
                 if macro_num > 0
                     label_assign = char(Labels{macro_num});
                     label_assign_num = macro_num;
@@ -455,21 +453,53 @@ elseif (PreTypeChoice == 2 || PreTypeChoice == 3) && PreAssChoice == 1
                     label_assign_num = NaN;
                     label_assign_lobe = 'error';
                 end
-                
-                % PA of electrodes without info about CS/LS 
-                [all_assign_num,~,proj_coord,~] = electrode_assignment( ...
-                              [x,y,z],all_areas,assignment_method,mri_all); 
-                if all_assign_num > 0
-                    all_assign = MAP_all(gv_all == all_assign_num).name;
-                    all_assign_num = all_assign_num-min(gv_all)+1;
-                elseif all_assign_num == 0
-                    all_assign = 'n.a.';
-                else
-                    all_assign = 'error';
-                    all_assign_num = NaN;
+
+                % PA for all areas, incl projection
+				%------------------------------------------
+                %-get probability maps for all areas
+                ProbMax = NaN(size(xyz,2),size(MAP_all,2));
+                for PM = 1:size(MAP_all,2)
+                    ProbMax(1:size(xyz,2),PM) = spm_sample_vol( ...
+                           MAP_all(PM).PMap,xyz(1,:),xyz(2,:),xyz(3,:),0)';
                 end
                 
-                % Results of assignment are written in F
+                %-probabilistic assignment, based on all areas
+                tempProbs = zeros(size(ProbMax));
+                for indxx  = 1:size(XYZmm,2) 
+                    if any(ProbMax(indxx,:))
+                        Probs = find(ProbMax(indxx,1:end)>0); 
+                        for getPr = Probs
+                            [Ploc,~,~] = MinMax(MAP_all( ...
+                                              getPr).PMap,xyz(:,indxx));
+                            tempProbs(indxx,getPr) = Ploc;
+                        end
+                    end
+                end
+                
+                %-get areas and probabilities
+                areaProbs = mean(tempProbs,1);
+                goalAreas = find(areaProbs>0);
+                if ~isempty(goalAreas)
+                    [~,sortP] = sort(areaProbs(goalAreas),'descend');
+                    all_assign = cell(1,size(goalAreas,2));
+                    p_area = NaN(1,size(goalAreas,2));
+                    for getPr = 1:size(goalAreas,2)
+                        all_assign{getPr} = MAP_all( ...
+                                        goalAreas(sortP(getPr))).name;
+                     	all_p_area(getPr) = areaProbs( ...
+                                                goalAreas(sortP(getPr)));
+                    end
+                else
+                    all_assign = 'n.a.';
+                    all_p_area = NaN;
+                end  
+                    
+                if assign_num>0
+                    assign_num = assign_num-min(all_areas)+1;
+                    all_assign_num = assign_num-min(all_areas)+1;
+                end
+                
+                %-results of assignment are written in F
                 F.assign_coord = assign_coord;
                 F.projection_coord(:,e) = proj_coord';
                 F.label{e} = label_assign;
@@ -484,6 +514,7 @@ elseif (PreTypeChoice == 2 || PreTypeChoice == 3) && PreAssChoice == 1
                 F.p_area{e} = p_area;
                 F.all_assign{e} = all_assign;
                 F.all_assign_num(e) = all_assign_num;
+                F.all_p_area{e} = all_p_area;
                 F.sulci{e} = sulci_tag;
                 
                 elecnt = elecnt + 1;
@@ -494,7 +525,7 @@ elseif (PreTypeChoice == 2 || PreTypeChoice == 3) && PreAssChoice == 1
                          'Assignment skipped...\n'], char(E.names{e}))
                 reverseStr = '';               
                 
-                % Results of assignment are written in F
+                %-results of assignment are written in F
                 F.assign_coord = assign_coord;
                 F.projection_coord(:,e) = [NaN;NaN;NaN];
                 F.label{e} = 'error';
@@ -513,7 +544,8 @@ elseif (PreTypeChoice == 2 || PreTypeChoice == 3) && PreAssChoice == 2
     
     %___________________________________________________________________
     %
-	% Probabilisitic Assignment for grid & strip electrodes
+	% Probabilisitic Assignment for grid & strip electrodes, including 
+    % the cortical projection
     %___________________________________________________________________
     
     % select root paths and load variables
@@ -522,10 +554,11 @@ elseif (PreTypeChoice == 2 || PreTypeChoice == 3) && PreAssChoice == 2
     load([lpath filesep 'areasv22.mritv_session.mat'])
     load([lpath filesep 'AllAreas_v22_MPM.mat'])
 	[an,ann_all] = xlsread([lpath filesep 'areas_v22.xls']);
+	lobe = xlsread([lpath filesep 'Labels.xls'],'E1:E116');
     load([lpath filesep 'FV_no_cerebellum.mat'], 'FV', 'FVplot')
-    load([lpath filesep 'Macro.mat']) 
-    lobe = xlsread([lpath filesep 'Labels.xls'],'E1:E116');
-    load([lpath filesep 'macrolabels.mat'])
+    load([lpath filesep 'Macro.mat'],'Labels')
+    load([lpath filesep 'macrolabels.mat'],'macrolabel')
+    load([lpath filesep 'indimaps.mat'],'MAPbins','MAPnames')
     
     % get grey values for all areas
     %-------------------------------------------------------------------
@@ -535,6 +568,7 @@ elseif (PreTypeChoice == 2 || PreTypeChoice == 3) && PreAssChoice == 2
     end
     all_areas = gv_all(an>=0);
     mri_all = mri;
+	MAP_all = MAP;
                              
     %-define assignment method
     %-------------------------------------------------------------------
@@ -542,18 +576,7 @@ elseif (PreTypeChoice == 2 || PreTypeChoice == 3) && PreAssChoice == 2
     assignment_method.plot = 1;     % 1 -> plot normals
     assignment_method.mindist = 5;  % all hull points <= this distance 
                       % in mm are projected onto the probabilistc maps 
-
-    
-    %-get grayvalues from anatomy toolbox and assign them for HPA
-    %-------------------------------------------------------------------
-    load([lpath filesep 'all_cortical_v22.mritv_session.mat'])
-    load([lpath filesep 'all_cortical_v22_MPM.mat'])
-    gv = NaN(1,numel(MAP));
-    for r=1:numel(MAP)           %grey values  
-        gv(r) = MAP(r).GV; 
-    end  
-    clear F   
-
+  
     % create assign_coord and all_assign_num looping over electrodes 
     %-------------------------------------------------------------------
     fprintf('ELAS>   Creating assignment coordinates...\n')
@@ -587,7 +610,8 @@ elseif (PreTypeChoice == 2 || PreTypeChoice == 3) && PreAssChoice == 2
     
     %-assignment of projected electrodes (HPA & PA)
     %-------------------------------------------------------------------
-    reverseStr = '';
+    clear F
+	reverseStr = '';
     F.names  = E.names;
     F.signalType = inputType;
     for e = 1:numel(E.names)
@@ -595,35 +619,61 @@ elseif (PreTypeChoice == 2 || PreTypeChoice == 3) && PreAssChoice == 2
                        'areas: electrode %d/%d\n'], e, numel(E.names));
         fprintf([reverseStr, msg])
         reverseStr = repmat(sprintf('\b'), 1, length(msg));
-        x = E.mnix(e);
-        y = E.mniy(e);
-        z = E.mniz(e);
-        
-        % probabilistic assignment for all cortical areas
-        [assign_num,macro_num,~,all] = electrode_assignment( ...
-                                         [x,y,z],gv,assignment_method,mri); 
-        
-        % assign touched grey values to area
-        if assign_num>0
-            assign_num_mult = unique(all(all~=0));
-            assign = cell(1,numel(assign_num_mult));
-            p_area = NaN(1,numel(assign_num_mult));
-            for a = 1:numel(assign_num_mult) 
-                assign{a} = ann{gv==assign_num_mult(a)};
-                p_area(a) = numel(find(all==assign_num_mult(a)))/ ...
-                            numel(all(all~=0));
-            end
-            [p_area,sortInd] = sort(p_area,'descend');
-            assign = assign(sortInd);
-            assign_num = assign_num-min(gv)+1;
-        elseif assign_num == 0
-            assign = 'n.a.';
-            p_area = NaN;
-        else
-            assign = 'error';
-            p_area = NaN;
-        end 
+		
+		% PA assignment for cortical areas, incl projection
+		%---------------------------------------------------
+		%-create individual probability MAP (IPM) for cortical areas
+		MAP = MAP_all(1,logical(MAPbins(:,6)));
 
+		%-perform cortical projection
+		[assign_num,macro_num,proj_coord,~,Call] = ...
+				   elas_cortical_projection(...
+				   [E.mnix(e) E.mniy(e) E.mniz(e)], ...
+				   all_areas,assignment_method,mri_all);
+		
+		%- MNI -> Anatomical MNI; for this step, coordinates  
+		% are expected to be MNIs
+		XYZmm = [Call(:,1) Call(:,2)-4 Call(:,3)+5]';
+		xyz = inv(MAP_all(1).MaxMap.mat) * ...
+						[XYZmm; ones(1,size(XYZmm,2))];
+					
+		%-get probability maps for cortical areas
+		ProbMax = NaN(size(xyz,2),size(MAP,2));
+		for PM = 1:size(MAP,2)
+			ProbMax(1:size(xyz,2),PM) = spm_sample_vol( ...
+					  MAP(PM).PMap,xyz(1,:),xyz(2,:),xyz(3,:),0)';
+		end
+		
+		%-probabilistic assignment, based on cortical areas
+		tempProbs = zeros(size(ProbMax));
+		for indxx  = 1:size(XYZmm,2) 
+			if any(ProbMax(indxx,:))
+				Probs = find(ProbMax(indxx,1:end)>0); 
+				for getPr = Probs
+					[Ploc,~,~] = MinMax(MAP( ...
+									  getPr).PMap,xyz(:,indxx));
+					tempProbs(indxx,getPr) = Ploc;
+				end
+			end
+		end
+		
+		%-get areas and probabilities
+		areaProbs = mean(tempProbs,1);
+		goalAreas = find(areaProbs>0);
+		if ~isempty(goalAreas)
+			[~,sortP] = sort(areaProbs(goalAreas),'descend');
+			assign = cell(1,size(goalAreas,2));
+			p_area = NaN(1,size(goalAreas,2));
+			for getPr = 1:size(goalAreas,2)
+				assign{getPr} = MAP(goalAreas(sortP(getPr))).name;
+				p_area(getPr) = areaProbs(goalAreas(sortP(getPr)));
+			end
+		else
+			assign = 'n.a.';
+			p_area = NaN;
+		end  	
+
+		%-get macroanatomic labels
         if macro_num > 0
             label_assign = char(Labels{macro_num});
             label_assign_num = macro_num;
@@ -637,21 +687,53 @@ elseif (PreTypeChoice == 2 || PreTypeChoice == 3) && PreAssChoice == 2
             label_assign_num = NaN;
             label_assign_lobe = 'error';
         end
+	
+		% PA assignment for all areas, incl projection
+		%---------------------------------------------------
+		%-get probability maps for all areas
+		ProbMax = NaN(size(xyz,2),size(MAP_all,2));
+		for PM = 1:size(MAP_all,2)
+			ProbMax(1:size(xyz,2),PM) = spm_sample_vol( ...
+				   MAP_all(PM).PMap,xyz(1,:),xyz(2,:),xyz(3,:),0)';
+		end
+		
+		%-probabilistic assignment, based on all areas
+		tempProbs = zeros(size(ProbMax));
+		for indxx  = 1:size(XYZmm,2) 
+			if any(ProbMax(indxx,:))
+				Probs = find(ProbMax(indxx,1:end)>0); 
+				for getPr = Probs
+					[Ploc,~,~] = MinMax(MAP_all( ...
+									  getPr).PMap,xyz(:,indxx));
+					tempProbs(indxx,getPr) = Ploc;
+				end
+			end
+		end
+		
+		%-get areas and probabilities
+		areaProbs = mean(tempProbs,1);
+		goalAreas = find(areaProbs>0);
+		if ~isempty(goalAreas)
+			[~,sortP] = sort(areaProbs(goalAreas),'descend');
+			all_assign = cell(1,size(goalAreas,2));
+			p_area = NaN(1,size(goalAreas,2));
+			for getPr = 1:size(goalAreas,2)
+				all_assign{getPr} = MAP_all( ...
+								goalAreas(sortP(getPr))).name;
+				all_p_area(getPr) = areaProbs( ...
+										goalAreas(sortP(getPr)));
+			end
+		else
+			all_assign = 'n.a.';
+			all_p_area = NaN;
+		end  
+			
+		if assign_num>0
+			assign_num = assign_num-min(all_areas)+1;
+			all_assign_num = assign_num-min(all_areas)+1;
+		end
 
-        % probabilistic assignment for all areas
-        [all_assign_num,~,proj_coord,~] = electrode_assignment( ...
-                              [x,y,z],all_areas,assignment_method,mri_all); 
-        if all_assign_num > 0
-            all_assign = ann_all{gv_all == all_assign_num};
-            all_assign_num = all_assign_num-min(gv_all)+1;
-        elseif all_assign_num == 0
-            all_assign = 'n.a.';
-        else
-            all_assign = 'error';
-            all_assign_num = NaN;
-        end
-
-        % Results of assignment are written in F
+        %-results of assignment are written in F
         F.assign_coord = assign_coord;
         F.projection_coord(:,e) = proj_coord';
         F.label{e} = label_assign;
@@ -666,6 +748,8 @@ elseif (PreTypeChoice == 2 || PreTypeChoice == 3) && PreAssChoice == 2
         F.p_area{e} = p_area;
         F.all_assign{e} = all_assign;
         F.all_assign_num(e) = all_assign_num;
+		F.all_p_area{e} = all_p_area;
+		F.sulci{e} = [];
 
     end
     

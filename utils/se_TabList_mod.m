@@ -26,7 +26,7 @@ global MAP ELAS
 %=======================================================================
 
 %=======================================================================
-% - probabilitic MAP (loading)
+% - probabilistic MAP (loading)
 %=======================================================================
 MapName = [ELAS.SPMANApath filesep 'Anatomy_v22c_MPM.mat']; 
 se_getMap('anat',MapName);
@@ -59,14 +59,15 @@ for indxx  = 1:size(XYZmm,2)
 
     % "anatomical" assignment
     ML = round(spm_sample_vol(MAP(1).Macro,xyz(1,indxx),xyz(2,indxx),xyz(3,indxx),0)');
-    if ML > 0;
+    if ML > 0
         MLl = MAP(1).MLabels.Labels{ML};
         elAss.brainAtlas = MLl;
     end
 
     % "probabilistic" assignment
     if any(ProbMax(indxx,:))
-        Probs = find(ProbMax(indxx,2:end)>0); [value sortP]= sort(ProbMax(indxx,Probs+1));
+        Probs = find(ProbMax(indxx,2:end)>0); 
+        [~,sortP]= sort(ProbMax(indxx,Probs+1));
         c = 1;
         for getPr = size(Probs,2):-1:1
             [Ploc, Pmin, Pmax] = MinMax(MAP(Probs(sortP(getPr))).PMap,xyz(:,indxx));
