@@ -205,7 +205,6 @@ if PreTypeChoice == 1
     fprintf('ELAS>   Loading variables...\n')
     load([lpath filesep 'areasv22.mritv_session.mat'])
     load([lpath filesep 'AllAreas_v22_MPM.mat'])
-%     [an,~] = xlsread([lpath filesep 'areas_v22.xls']);
     load([lpath filesep 'Macro.mat'])
     load([lpath filesep 'macrolabels.mat'])
     load([lpath filesep 'FV_no_cerebellum.mat'], 'FV', 'FVplot')
@@ -258,8 +257,8 @@ elseif (PreTypeChoice == 2 || PreTypeChoice == 3) && PreAssChoice == 1
     fprintf('ELAS>   Loading variables...\n')
 	load([lpath filesep 'areasv22.mritv_session.mat'],'mri')
     load([lpath filesep 'AllAreas_v22_MPM.mat'],'MAP')
-    [an,~] = xlsread([lpath filesep 'areas_v22.xls']);
-    lobe = xlsread([lpath filesep 'Labels.xls'],'E1:E116');
+    load([lpath filesep 'areas_v22.mat'])
+    load([lpath filesep 'Labels.mat'])
     load([lpath filesep 'FV_no_cerebellum.mat'], 'FV', 'FVplot')
     load([lpath filesep 'Macro.mat'],'Labels')
     load([lpath filesep 'macrolabels.mat'],'macrolabel')
@@ -553,8 +552,8 @@ elseif (PreTypeChoice == 2 || PreTypeChoice == 3) && PreAssChoice == 2
     fprintf('ELAS>   Loading variables...\n')
     load([lpath filesep 'areasv22.mritv_session.mat'])
     load([lpath filesep 'AllAreas_v22_MPM.mat'])
-	[an,ann_all] = xlsread([lpath filesep 'areas_v22.xls']);
-	lobe = xlsread([lpath filesep 'Labels.xls'],'E1:E116');
+    load([lpath filesep 'areas_v22.mat'])
+    load([lpath filesep 'Labels.mat'])
     load([lpath filesep 'FV_no_cerebellum.mat'], 'FV', 'FVplot')
     load([lpath filesep 'Macro.mat'],'Labels')
     load([lpath filesep 'macrolabels.mat'],'macrolabel')
