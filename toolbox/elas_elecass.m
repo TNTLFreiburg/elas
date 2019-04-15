@@ -496,6 +496,8 @@ elseif (PreTypeChoice == 2 || PreTypeChoice == 3) && PreAssChoice == 1
                 if assign_num>0
                     assign_num = assign_num-min(all_areas)+1;
                     all_assign_num = assign_num-min(all_areas)+1;
+                else
+                    all_assign_num = NaN;
                 end
                 
                 %-results of assignment are written in F
@@ -730,6 +732,8 @@ elseif (PreTypeChoice == 2 || PreTypeChoice == 3) && PreAssChoice == 2
 		if assign_num>0
 			assign_num = assign_num-min(all_areas)+1;
 			all_assign_num = assign_num-min(all_areas)+1;
+        else
+            all_assign_num = NaN;
 		end
 
         %-results of assignment are written in F

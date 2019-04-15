@@ -49,7 +49,36 @@ else
         return
     end
 end
+
+PreBrainChoice = listdlg('PromptString','Select brain mode:',...
+    'SelectionMode','single',...
+    'ListString', {'ICBM152 standard brain'...
+                   'individual brain'},...
+    'ListSize', [200 50],...
+    'Name', 'Brain mode');      
+if isempty(PreBrainChoice)
+    msgbox('Brain mode has to be defined!',...
+       'WARNING','warn');
+    fprintf('ELAS>   Done! \r\n')
+    return
+end
+
 load([ELAS.ASSIGNMENTSCRIPTpath filesep 'ICBM152_HD_213.mat'])
+if PreBrainChoice == 2
+%     g = gifti(['E:\Data Joos\01_Matlab\09_electrode_localization\testData\' ...
+%                'testPat\15_FR1_day1\c1wr15_FR1_day1.surf.gii']);
+ 	[filename, pathname] = uigetfile([ELAS.OUTPUTpath filesep '*.gii'],...
+                        'Select *.gii file containing individual brain');
+    if isequal([filename,pathname],[0,0])
+        msgbox('No file selected! ICBM152 brain used for visualization.', ...
+               'WARNING','warn');
+    else
+        g = gifti([pathname filename]);
+        S.cS = zeros(size(g.vertices,1),1);
+        S.vS = double(g.vertices);
+        S.fS = double(g.faces);
+    end
+end
 
 %=======================================================================
 % - get area mode and load MAP

@@ -111,7 +111,9 @@ for a = 1:loopSz             % for each file containing F
             H.channels(1,cnt).p_cerebroSpinalFluid = [];
         end
         if isfield(F,'projection_coord')
-            H.channels(1,cnt).projection_coord = F.projection_coord(:,b);
+            if ~ischar(F.projection_coord)
+                H.channels(1,cnt).projection_coord = F.projection_coord(:,b);
+            end
         end 
         H.channels(1,cnt).group = F.group;
         cnt = cnt + 1;
