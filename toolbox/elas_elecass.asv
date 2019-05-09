@@ -93,10 +93,10 @@ if PreTypeChoice == 2 || PreTypeChoice == 3
     PreAssChoice = listdlg('PromptString', ...
         'Select assignment technique:', ...
         'SelectionMode','single',...
-        'ListString', {'Hierarchical Probabilistic Assignment (HPA)',...
-                       'Probabilistic Assignment incl projection',...
-                       'Probabilistic Assignment'},...
-        'ListSize', [400 45],...
+        'ListString', {'Hierarchical Probabilistic Assignment (HPA)'...
+                       'Probabilistic Assignment'...
+                       'Probabilistic Assignment without projection'},...
+        'ListSize', [400 30],...
         'Name', 'Assignment technique');      
     if isempty(PreAssChoice)
         msgbox('Signal type has to be defined!',...
@@ -195,12 +195,12 @@ end
 % - start selected area assignment loop
 %=======================================================================
 lpath = ELAS.ASSIGNMENTSCRIPTpath;
-if PreTypeChoice == 1 || PreAssChoice == 3
+if PreTypeChoice == 1
     
     %___________________________________________________________________
     %
-    % Probabilisitic Assignment for all electrodes types, without 
-    % cortical projection
+    % Probabilisitic Assignment for stereotactic and interhemispheric 
+    % electrodes, without cortical projection
     %___________________________________________________________________
     
     % Create assignment variable 'F', containing the MNI coordinates and 
@@ -248,7 +248,7 @@ if PreTypeChoice == 1 || PreAssChoice == 3
         F.sulci{1,a} = [];
     end
 
-elseif PreAssChoice == 1
+elseif (PreTypeChoice == 2 || PreTypeChoice == 3) && PreAssChoice == 1
     
     %___________________________________________________________________
     %
@@ -556,7 +556,7 @@ elseif PreAssChoice == 1
         end
     end   
 
-elseif PreAssChoice == 2
+elseif (PreTypeChoice == 2 || PreTypeChoice == 3) && PreAssChoice == 2
     
     %___________________________________________________________________
     %
@@ -773,6 +773,130 @@ elseif PreAssChoice == 2
         end
 		F.sulci{e} = [];
 
+    end
+    
+elseif (PreTypeChoice == 2 || PreTypeChoice == 3) && PreAssChoice == 3
+    
+    %___________________________________________________________________
+    %
+	% Probabilisitic Assignment for grid & strip electrodes, without 
+    % cortical projection
+    %___________________________________________________________________
+    
+    % read segmented image files for:
+    %-------------------------------------------------------------------
+    % grey matter
+    [filename, pathname] = uigetfile( ...
+               {'*.img;*.nii','All Image-Files'},...
+               'Select segmented grey matter file (c1*.img,c1*.nii)',...
+               ELAS.OUTPUTpath);
+    if isequal([filename,pathname],[0,0])
+        disp('ELAS>   ERROR: No file selected!');
+        warning('No assignment to matter type! Continuing..')
+    else
+        [gmri, origin_gmri.OR] = elas_imgread(filename,pathname);
+        % white matter       
+        [filename, pathname] = uigetfile( ...
+                   {'*.img;*.nii', 'All Image-Files'}, ...
+                   ['Select segmented white matter file ' ...
+                   '(c2*.img,c2*.nii)'],pathname);
+        if isequal([filename,pathname],[0,0])
+            disp('ELAS>   ERROR: No file selected!');
+            fprintf('ELAS>   Done! \n')
+            return
+        end    
+        [wmri, origin_wmri.OR] = elas_imgread(filename,pathname);
+        % cerebrospinal fluid (CSF)
+        [filename, pathname] = uigetfile( ...
+                   {'*.img;*.nii', 'All Image-Files'},...
+                   'Select segmented CSF file (c3*.img,c3*.nii)',...
+                   pathname);
+        if isequal([filename,pathname],[0,0])
+            disp('ELAS>   ERROR: No file selected!');
+            fprintf('ELAS>   Done! \n')
+            return
+        end
+        [csfmri, origin_csfmri.OR] = elas_imgread(filename,pathname);
+
+        % transform coordinates
+        %---------------------------------------------------------------
+        [tmpcoorg,~] = transfCS([E.mnix, E.mniy, E.mniz], 'mni', ...
+                                                    'mri', origin_gmri);
+        [tmpcoorw,~] = transfCS([E.mnix, E.mniy, E.mniz], 'mni', ...
+                                                    'mri', origin_wmri);
+        [tmpcoorc,~] = transfCS([E.mnix, E.mniy, E.mniz], 'mni', ...
+                                                  'mri', origin_csfmri);        
+    end    
+    
+    % assign electrodes to matter type
+    %-------------------------------------------------------------------
+    fprintf('ELAS>   Assigning electrodes to matter type...\n')
+    matter = cell(1,numel(E.mnix));
+    matter_num = cell(1,numel(E.mnix));
+    maxInd = NaN(1,numel(E.mnix)); 
+    for a = 1:numel(E.mnix)
+        try
+            matter_num{1,a} = cat(1, ...
+                 gmri(tmpcoorg(a,1),tmpcoorg(a,2),tmpcoorg(a,3)),...
+                 wmri(tmpcoorw(a,1),tmpcoorw(a,2),tmpcoorw(a,3)),...
+                 csfmri(tmpcoorc(a,1),tmpcoorc(a,2),tmpcoorc(a,3)));
+            [~,maxInd(1,a)] = max(matter_num{1,a});
+            if maxInd(1,a) == 1
+                matter{1,a} = 'Grey Matter';
+            elseif maxInd(1,a) == 2
+                matter{1,a} = 'White Matter';
+            elseif maxInd(1,a) == 3
+                matter{1,a} = 'Cerebro-Spinal Fluid';
+            end
+        catch
+            warning(['Assignment to matter type not possible ' ...
+                     'for electrode #%d! Assignment skipped...'], a)
+            matter{1,a} = 'n.a.';
+        end
+    end
+
+
+    % Create assignment variable 'F', containing the MNI coordinates and 
+    % the electrode names, as well as the names of the assigned anatomic 
+    % regions and the matter type.
+
+    %-load and define needed assignment variables out of toolbox
+    %-------------------------------------------------------------------
+    fprintf('ELAS>   Loading variables...\n')
+    load([lpath filesep 'areasv22.mritv_session.mat'])
+    load([lpath filesep 'AllAreas_v22_MPM.mat'])
+    load([lpath filesep 'Macro.mat'])
+    load([lpath filesep 'macrolabels.mat'])
+    load([lpath filesep 'FV_no_cerebellum.mat'], 'FV', 'FVplot')
+    
+    % write results into variable 'F' & get information from anatomy tb script
+    %-------------------------------------------------------------------
+    F.names  = E.names;
+    F.signalType = inputType;
+    F.assign_coord = NaN(3,numel(E.mnix));
+    F.projection_coord = 'no projection';
+    F.label = cell(1,size(E.mnix,2));
+    F.all_assign = cell(1,size(E.mnix,2));
+    F.all_assign_num = NaN(1,numel(E.mnix));
+    F.p_area = cell(1,size(E.mnix,2));
+    F.p_bnds = cell(1,size(E.mnix,2));
+    F.matter = matter;
+    F.matter_num = matter_num;
+    F.sulci = cell(1,numel(E.mnix));
+    
+    reverseStr = '';
+    for a = 1:numel(E.mnix)
+        msg = sprintf(['ELAS>   Assigning electrodes to anatomical ' ... 
+                       'areas: electrode %d/%d\n'], a, numel(E.mnix));
+    	fprintf([reverseStr, msg])
+        reverseStr = repmat(sprintf('\b'), 1, length(msg));
+        F.assign_coord(:,a) = cat(1,E.mnix(a),E.mniy(a),E.mniz(a));
+        evalc('elAss = se_TabList_mod(E.mnix(a), E.mniy(a), E.mniz(a))');
+        F.all_assign{1,a} = elAss.probabAss_area;
+        F.p_area{1,a} = elAss.probabAss_elec;
+        F.p_bnds{1,a} = elAss.probabAss_bnds;
+        F.label{1,a} = elAss.brainAtlas;
+        F.sulci{1,a} = [];
     end
     
 elseif PreTypeChoice > 3 && PreTypeChoice < 9

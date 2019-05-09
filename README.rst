@@ -3,7 +3,7 @@ elas
 
 MATLAB toolbox for localization and assignment of intracranial electrodes. This is done by using SPM12 (see below). Post-implantation and pre-implantation (only for depth electrodes) images are needed for processing. Details for use of software see manual and:
 
-Behncke J., Kern M., Rüscher J., Schulze-Bonhage A., und Ball T., "Quantifying uncertainty in intracranial EEG: Probabilistic neuroanatomical assignment and 3-D visualization of in-tracranial electrodes". 
+Behncke J., Kern M., Rüscher J., Schulze-Bonhage A., und Ball T., "Probabilistic neuroanatomical assignment of intracranial electrodes using the ELAS toolbox". 
 
 This version runs with MATLAB SPM (statistical parametric mapping).
 
