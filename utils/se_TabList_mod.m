@@ -18,7 +18,7 @@ function elAss = se_TabList_mod(X, Y, Z)
 % REMARK 
 %          this code is modified from: se_TabList.m of Anatomy Toolbox
 %
-% JBehncke, June18
+% SPM, modified by JBehncke, June18
 
 
 %=======================================================================

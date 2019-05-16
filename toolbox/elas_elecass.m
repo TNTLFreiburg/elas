@@ -206,6 +206,7 @@ if PreTypeChoice == 1 || PreAssChoice == 3
     % Create assignment variable 'F', containing the MNI coordinates and 
     % the electrode names, as well as the names of the assigned anatomic 
     % regions and the matter type.
+    mth = 'dpa';
 
     %-load and define needed assignment variables out of toolbox
     %-------------------------------------------------------------------
@@ -254,6 +255,7 @@ elseif PreAssChoice == 1
     %
 	% HPA for grid & strip electrodes
     %___________________________________________________________________
+    mth = 'hpa';
     
     % select root paths and load variables
     %-------------------------------------------------------------------
@@ -562,7 +564,8 @@ elseif PreAssChoice == 2
     %
 	% Probabilisitic Assignment for grid & strip electrodes, including 
     % the cortical projection
-    %___________________________________________________________________
+    %___________________________________________________________________   
+    mth = 'pa';
     
     % select root paths and load variables
     %-------------------------------------------------------------------
@@ -777,6 +780,7 @@ elseif PreAssChoice == 2
     
 elseif PreTypeChoice > 3 && PreTypeChoice < 9
     
+    mth = 'no';
     F.names  = E.names;
     F.signalType = inputType;
     
@@ -804,7 +808,7 @@ else
     answer = inputdlg({'Enter group name:'},'Input',[1 35],{'group'});
     F.group = answer{1};
 end
-savename = [F.patID '_' F.group];
+savename = [F.patID '_' F.group '_' mth];
 
 fprintf('ELAS>   Save variable F as: %s_F.mat \n', [savename '_F.mat'])
 if exist('ELAS','var') && isfield(ELAS,'OUTPUTpath')
