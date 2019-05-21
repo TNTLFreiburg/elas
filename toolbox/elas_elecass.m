@@ -391,16 +391,18 @@ elseif PreAssChoice == 1
                 reverseStr = repmat(sprintf('\b'), 1, length(msg));
                 
 				% HPA for individual areas, incl projection
-				%------------------------------------------
+				%------------------------------------------              
+                %-MNI -> Anatomical MNI; for this step, coordinates  
+                % E.mni are expected to be MNIs
+                E.mniy(e) = E.mniy(e)-4; E.mniz(e) = E.mniz(e)+5;
                 %-perform cortical projection
                 [assign_num,macro_num,proj_coord,~,Call] = ...
                            elas_cortical_projection(...
                            [E.mnix(e) E.mniy(e) E.mniz(e)], ...
                            all_areas,assignment_method,mri_all);
-                
-                %- MNI -> Anatomical MNI; for this step, coordinates  
-                % are expected to be MNIs
-                XYZmm = [Call(:,1) Call(:,2)-4 Call(:,3)+5]';
+                              
+%                 XYZmm = [Call(:,1) Call(:,2)-4 Call(:,3)+5]';
+                XYZmm = [Call(:,1) Call(:,2) Call(:,3)]';
                 xyz = inv(MAP_all(1).MaxMap.mat) * ...
                                 [XYZmm; ones(1,size(XYZmm,2))];
                             
@@ -417,7 +419,7 @@ elseif PreAssChoice == 1
                     if any(ProbMax(indxx,:))
                         Probs = find(ProbMax(indxx,1:end)>0); 
                         for getPr = Probs
-                            [Ploc,~,~] = MinMax(MAP( ...
+                            [Ploc,~,~] = Min_Max(MAP( ...
                                               getPr).PMap,xyz(:,indxx));
                             tempProbs(indxx,getPr) = Ploc;
                         end
@@ -479,7 +481,7 @@ elseif PreAssChoice == 1
                     if any(ProbMax(indxx,:))
                         Probs = find(ProbMax(indxx,1:end)>0); 
                         for getPr = Probs
-                            [Ploc,~,~] = MinMax(MAP_all( ...
+                            [Ploc,~,~] = Min_Max(MAP_all( ...
                                               getPr).PMap,xyz(:,indxx));
                             tempProbs(indxx,getPr) = Ploc;
                         end
@@ -633,6 +635,8 @@ elseif PreAssChoice == 2
 	reverseStr = '';
     F.names  = E.names;
     F.signalType = inputType;
+    %-create individual probability MAP (IPM) for cortical areas
+    MAP = MAP_all(1,logical(MAPbins(:,6)));
     for e = 1:numel(E.names)
         msg = sprintf(['ELAS>   Assigning electrodes to anatomical ' ... 
                        'areas: electrode %d/%d\n'], e, numel(E.names));
@@ -641,18 +645,18 @@ elseif PreAssChoice == 2
 		
 		% PA assignment for cortical areas, incl projection
 		%---------------------------------------------------
-		%-create individual probability MAP (IPM) for cortical areas
-		MAP = MAP_all(1,logical(MAPbins(:,6)));
-
+        %-MNI -> Anatomical MNI; for this step, coordinates  
+        % E.mni are expected to be MNIs
+        E.mniy(e) = E.mniy(e)-4; E.mniz(e) = E.mniz(e)+5;
 		%-perform cortical projection
 		[assign_num,macro_num,proj_coord,~,Call] = ...
 				   elas_cortical_projection(...
 				   [E.mnix(e) E.mniy(e) E.mniz(e)], ...
 				   all_areas,assignment_method,mri_all);
 		
-		%- MNI -> Anatomical MNI; for this step, coordinates  
-		% are expected to be MNIs
-		XYZmm = [Call(:,1) Call(:,2)-4 Call(:,3)+5]';
+
+% 		XYZmm = [Call(:,1) Call(:,2)-4 Call(:,3)+5]';
+        XYZmm = [Call(:,1) Call(:,2) Call(:,3)]';
 		xyz = inv(MAP_all(1).MaxMap.mat) * ...
 						[XYZmm; ones(1,size(XYZmm,2))];
 					
@@ -669,7 +673,7 @@ elseif PreAssChoice == 2
 			if any(ProbMax(indxx,:))
 				Probs = find(ProbMax(indxx,1:end)>0); 
 				for getPr = Probs
-					[Ploc,~,~] = MinMax(MAP( ...
+					[Ploc,~,~] = Min_Max(MAP( ...
 									  getPr).PMap,xyz(:,indxx));
 					tempProbs(indxx,getPr) = Ploc;
 				end
@@ -722,7 +726,7 @@ elseif PreAssChoice == 2
 			if any(ProbMax(indxx,:))
 				Probs = find(ProbMax(indxx,1:end)>0); 
 				for getPr = Probs
-					[Ploc,~,~] = MinMax(MAP_all( ...
+					[Ploc,~,~] = Min_Max(MAP_all( ...
 									  getPr).PMap,xyz(:,indxx));
 					tempProbs(indxx,getPr) = Ploc;
 				end
