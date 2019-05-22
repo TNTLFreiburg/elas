@@ -184,6 +184,11 @@ else
                             areas{a}(:,3)], 'mri','mni', srcPar_areas);
     end
 end
+% - Anatomical MNI -> MNI (brain and electrodes in MNI!!!)
+for a = 1:numel(areas)
+    areas{a}(:,2) = areas{a}(:,2)+4;
+    areas{a}(:,3) = areas{a}(:,3)-5;
+end
    
 %=======================================================================
 % - call plot function
