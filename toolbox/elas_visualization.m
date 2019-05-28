@@ -115,6 +115,7 @@ for a = 1:numel(H.channels)
     electrodes.xyz(a,:) = [H.channels(a).MNI_x, ...
                            H.channels(a).MNI_y, ...
                            H.channels(a).MNI_z];
+    electrodes.assign{a,1} = H.channels(a).ass_cytoarchMap{1};
 end
                            
 %=======================================================================
@@ -184,9 +185,18 @@ else
                             areas{a}(:,3)], 'mri','mni', srcPar_areas);
     end
 end
+
+%=======================================================================
+% - convert electrode coordinates and assign to areas
+%=======================================================================
 % - MNI -> Anatomical MNI (brain and areas are in Anatomical MNI!!!)
 electrodes.xyz(:,2) = electrodes.xyz(:,2)-4;
 electrodes.xyz(:,3) = electrodes.xyz(:,3)+5;
+% - assign electrodes to areas in 'getmaps'
+for a = 1:size(electrodes.assign,1)
+    electrodes.assign{a,2} = ...
+                  find(strcmp(electrodes.assign{a}, {getmaps(:).name}));
+end
 
 %=======================================================================
 % - call plot function
