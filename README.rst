@@ -19,10 +19,10 @@ installation
 
 .. code-block:: bash
 
-  git clone https://github.com/joosbehncke/elas
+  git clone https://github.com/TNTLFreiburg/elas
 
 
 documentation
 =============
 
-Manual is online under https://github.com/joosbehncke/elas/blob/master/doc/manual_ELAS.pdf
+Manual is online under https://github.com/TNTLFreiburg/elas/blob/master/doc/manual_ELAS.pdf
